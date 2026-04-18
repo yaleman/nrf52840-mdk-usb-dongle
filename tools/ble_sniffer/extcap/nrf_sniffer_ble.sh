@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eux
+
 script_path=$(dirname "$0")
 cd "$script_path" || exit
 export VIRTUAL_ENV="$HOME/.cache/nrf_sniffer"
