@@ -7,4 +7,4 @@ uv venv --clear "${VIRTUAL_ENV}"
 uv sync --active
 # shellcheck disable=SC1091
 source "${VIRTUAL_ENV}/bin/activate" || exit 1
-uv run --active python "$script_path/nrf_sniffer_ble.py" "$@"
+python "$script_path/nrf_sniffer_ble.py" "$@"
