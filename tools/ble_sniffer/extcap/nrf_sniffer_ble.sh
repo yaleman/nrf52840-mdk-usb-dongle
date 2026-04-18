@@ -9,4 +9,4 @@ uv venv --clear "${VIRTUAL_ENV}"
 uv sync --active
 # shellcheck disable=SC1091
 # source "${VIRTUAL_ENV}/bin/activate" || exit 1
-uv run nrf-sniffer-ble "$@"
+uv run --active nrf-sniffer-ble "$@"
