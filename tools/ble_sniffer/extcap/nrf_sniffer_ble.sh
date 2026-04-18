@@ -2,7 +2,7 @@
 
 script_path=$(dirname "$0")
 cd "$script_path" || exit
-VIRTUAL_ENV="$HOME/.cache/nrf_sniffer"
+export VIRTUAL_ENV="$HOME/.cache/nrf_sniffer"
 uv venv --clear "${VIRTUAL_ENV}"
 uv sync
 # shellcheck disable=SC1091
