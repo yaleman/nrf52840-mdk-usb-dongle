@@ -42,17 +42,14 @@ Wireshark extcap wrapper for the nRF Sniffer for Bluetooth LE by Nordic Semicond
 """
 
 import sys
-
-print(f"{sys.argv=}")
-
 import os
 import argparse
 import re
 import time
 import struct
 import logging
-
-from SnifferAPI import Logger
+import atexit
+from .SnifferAPI import Logger
 
 try:
     import serial
@@ -65,7 +62,7 @@ except ImportError:
         f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry'
     )
 
-from SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
+from .SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
 
 
 ERROR_USAGE = 0
@@ -310,6 +307,7 @@ def string_address(address):
 
 def control_read():
     """Read a message from the control channel"""
+    assert fn_ctrl_in is not None
     header = fn_ctrl_in.read(6)
     if not header:
         # Ref. https://docs.python.org/3/tutorial/inputoutput.html#methods-of-file-objects:
@@ -342,16 +340,18 @@ def control_write(arg, typ, message):
 
 def capture_write(message):
     """Write the message to the capture pipe"""
+
+    assert fn_capture is not None
     fn_capture.write(message)
     fn_capture.flush()
 
 
 def new_packet(notification):
     """A new Bluetooth LE packet has arrived"""
-    if write_new_packets == True:
+    if write_new_packets:
         packet = notification.msg["packet"]
 
-        if rssi_filter == 0 or in_follow_mode == True or packet.RSSI > rssi_filter:
+        if rssi_filter == 0 or in_follow_mode or packet.RSSI > rssi_filter:
             p = bytes([packet.boardId] + packet.getList())
             capture_write(Pcap.create_packet(p, packet.time))
 
@@ -837,9 +837,6 @@ def parse_capture_filter(capture_filter):
         print('Filter syntax: "RSSI >= -value"')
 
 
-import atexit
-
-
 @atexit.register
 def goodbye():
     logging.info("Exiting PID {}".format(os.getpid()))
@@ -934,7 +931,8 @@ def main() -> None:
         sys.exit(ERROR_ARG)
 
     if len(sys.argv) <= 1:
-        parser.exit("No arguments given!")
+        print("No arguments given!")
+        parser.exit(1)
 
     if args.extcap_version:
         extcap_version = args.extcap_version
@@ -945,7 +943,8 @@ def main() -> None:
             sys.exit(0)
 
     if not args.extcap_interfaces and args.extcap_interface is None:
-        parser.exit("An interface must be provided or the selection must be displayed")
+        print("An interface must be provided or the selection must be displayed")
+        parser.exit(1)
 
     if args.extcap_interfaces or args.extcap_interface is None:
         extcap_interfaces()
