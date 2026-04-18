@@ -50,14 +50,21 @@ import struct
 import logging
 
 from SnifferAPI import Logger
+
 try:
     import serial
 except ImportError:
     Logger.initLogger()
-    logging.error(f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry')
-    sys.exit(f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry')
+    logging.error(
+        f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry'
+    )
+    sys.exit(
+        f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry'
+    )
 
 from SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
+
+print(sys.argv)
 
 ERROR_USAGE = 0
 ERROR_ARG = 1
@@ -129,18 +136,30 @@ capture_scan_response = True
 capture_scan_aux_pointer = True
 capture_coded = False
 
+
 def extcap_config(interface):
     """List configuration for the given interface"""
-    print("arg {number=0}{call=--only-advertising}{display=Only advertising packets}"
-          "{tooltip=The sniffer will only capture advertising packets from the selected device}{type=boolflag}{save=true}")
-    print("arg {number=1}{call=--only-legacy-advertising}{display=Only legacy advertising packets}"
-          "{tooltip=The sniffer will only capture legacy advertising packets from the selected device}{type=boolflag}{save=true}")
-    print("arg {number=2}{call=--scan-follow-rsp}{display=Find scan response data}"
-          "{tooltip=The sniffer will follow scan requests and scan responses in scan mode}{type=boolflag}{default=true}{save=true}")
-    print("arg {number=3}{call=--scan-follow-aux}{display=Find auxiliary pointer data}"
-          "{tooltip=The sniffer will follow aux pointers in scan mode}{type=boolflag}{default=true}{save=true}")
-    print("arg {number=3}{call=--coded}{display=Scan and follow devices on LE Coded PHY}"
-          "{tooltip=Scan for devices and follow advertiser on LE Coded PHY}{type=boolflag}{default=false}{save=true}")
+    print(
+        "arg {number=0}{call=--only-advertising}{display=Only advertising packets}"
+        "{tooltip=The sniffer will only capture advertising packets from the selected device}{type=boolflag}{save=true}"
+    )
+    print(
+        "arg {number=1}{call=--only-legacy-advertising}{display=Only legacy advertising packets}"
+        "{tooltip=The sniffer will only capture legacy advertising packets from the selected device}{type=boolflag}{save=true}"
+    )
+    print(
+        "arg {number=2}{call=--scan-follow-rsp}{display=Find scan response data}"
+        "{tooltip=The sniffer will follow scan requests and scan responses in scan mode}{type=boolflag}{default=true}{save=true}"
+    )
+    print(
+        "arg {number=3}{call=--scan-follow-aux}{display=Find auxiliary pointer data}"
+        "{tooltip=The sniffer will follow aux pointers in scan mode}{type=boolflag}{default=true}{save=true}"
+    )
+    print(
+        "arg {number=3}{call=--coded}{display=Scan and follow devices on LE Coded PHY}"
+        "{tooltip=Scan for devices and follow advertiser on LE Coded PHY}{type=boolflag}{default=false}{save=true}"
+    )
+
 
 def extcap_dlts(interface):
     """List DLTs for the given interface"""
@@ -148,14 +167,18 @@ def extcap_dlts(interface):
 
 
 def get_baud_rates(interface):
-    if not hasattr(serial, "__version__") or not serial.__version__.startswith('3.'):
-        raise RuntimeError("Too old version of python 'serial' Library. Version 3 required.")
+    if not hasattr(serial, "__version__") or not serial.__version__.startswith("3."):
+        raise RuntimeError(
+            "Too old version of python 'serial' Library. Version 3 required."
+        )
     return UART.find_sniffer_baudrates(interface)
 
 
 def get_interfaces():
-    if not hasattr(serial, "__version__") or not serial.__version__.startswith('3.'):
-        raise RuntimeError("Too old version of python 'serial' Library. Version 3 required.")
+    if not hasattr(serial, "__version__") or not serial.__version__.startswith("3."):
+        raise RuntimeError(
+            "Too old version of python 'serial' Library. Version 3 required."
+        )
 
     devices = UART.find_sniffer()
     return devices
@@ -163,44 +186,105 @@ def get_interfaces():
 
 def extcap_interfaces():
     """List available interfaces to capture from"""
-    print("extcap {version=%s}{display=nRF Sniffer for Bluetooth LE}"
-          "{help=https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Sniffer-for-Bluetooth-LE}"
-          % Sniffer.VERSION_STRING)
+    print(
+        "extcap {version=%s}{display=nRF Sniffer for Bluetooth LE}"
+        "{help=https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Sniffer-for-Bluetooth-LE}"
+        % Sniffer.VERSION_STRING
+    )
 
     for interface_port in get_interfaces():
-        if sys.platform == 'win32':
-            print("interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE %s}" % (interface_port, extcap_version, interface_port))
+        if sys.platform == "win32":
+            print(
+                "interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE %s}"
+                % (interface_port, extcap_version, interface_port)
+            )
         else:
-            print("interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE}" % (interface_port, extcap_version))
+            print(
+                "interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE}"
+                % (interface_port, extcap_version)
+            )
 
-    print("control {number=%d}{type=selector}{display=Device}{tooltip=Device list}" % CTRL_ARG_DEVICE)
-    print("control {number=%d}{type=selector}{display=Key}{tooltip=}" % CTRL_ARG_KEY_TYPE)
-    print("control {number=%d}{type=string}{display=Value}"
-          "{tooltip=6 digit passkey or 16 or 32 bytes encryption key in hexadecimal starting with '0x', big endian format."
-          "If the entered key is shorter than 16 or 32 bytes, it will be zero-padded in front'}"
-          "{validation=\\b^(([0-9]{6})|(0x[0-9a-fA-F]{1,64})|([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random))$\\b}" % CTRL_ARG_KEY_VAL)
-    print("control {number=%d}{type=string}{display=Adv Hop}"
-          "{default=37,38,39}"
-          "{tooltip=Advertising channel hop sequence. "
-          "Change the order in which the sniffer switches advertising channels. "
-          "Valid channels are 37, 38 and 39 separated by comma.}"
-          "{validation=^\s*((37|38|39)\s*,\s*){0,2}(37|38|39){1}\s*$}{required=true}" % CTRL_ARG_ADVHOP)
-    print("control {number=%d}{type=button}{display=Clear}{tooltop=Clear or remove device from Device list}" % CTRL_ARG_DEVICE_CLEAR)
-    print("control {number=%d}{type=button}{role=help}{display=Help}{tooltip=Access user guide (launches browser)}" % CTRL_ARG_HELP)
-    print("control {number=%d}{type=button}{role=restore}{display=Defaults}{tooltip=Resets the user interface and clears the log file}" % CTRL_ARG_RESTORE)
-    print("control {number=%d}{type=button}{role=logger}{display=Log}{tooltip=Log per interface}" % CTRL_ARG_LOG)
+    print(
+        "control {number=%d}{type=selector}{display=Device}{tooltip=Device list}"
+        % CTRL_ARG_DEVICE
+    )
+    print(
+        "control {number=%d}{type=selector}{display=Key}{tooltip=}" % CTRL_ARG_KEY_TYPE
+    )
+    print(
+        "control {number=%d}{type=string}{display=Value}"
+        "{tooltip=6 digit passkey or 16 or 32 bytes encryption key in hexadecimal starting with '0x', big endian format."
+        "If the entered key is shorter than 16 or 32 bytes, it will be zero-padded in front'}"
+        "{validation=\\b^(([0-9]{6})|(0x[0-9a-fA-F]{1,64})|([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random))$\\b}"
+        % CTRL_ARG_KEY_VAL
+    )
+    print(
+        "control {number=%d}{type=string}{display=Adv Hop}"
+        "{default=37,38,39}"
+        "{tooltip=Advertising channel hop sequence. "
+        "Change the order in which the sniffer switches advertising channels. "
+        "Valid channels are 37, 38 and 39 separated by comma.}"
+        "{validation=^\s*((37|38|39)\s*,\s*){0,2}(37|38|39){1}\s*$}{required=true}"
+        % CTRL_ARG_ADVHOP
+    )
+    print(
+        "control {number=%d}{type=button}{display=Clear}{tooltop=Clear or remove device from Device list}"
+        % CTRL_ARG_DEVICE_CLEAR
+    )
+    print(
+        "control {number=%d}{type=button}{role=help}{display=Help}{tooltip=Access user guide (launches browser)}"
+        % CTRL_ARG_HELP
+    )
+    print(
+        "control {number=%d}{type=button}{role=restore}{display=Defaults}{tooltip=Resets the user interface and clears the log file}"
+        % CTRL_ARG_RESTORE
+    )
+    print(
+        "control {number=%d}{type=button}{role=logger}{display=Log}{tooltip=Log per interface}"
+        % CTRL_ARG_LOG
+    )
 
-    print("value {control=%d}{value= }{display=All advertising devices}{default=true}" % CTRL_ARG_DEVICE)
-    print("value {control=%d}{value=%s}{display=Follow IRK}" % (CTRL_ARG_DEVICE, zero_addr))
+    print(
+        "value {control=%d}{value= }{display=All advertising devices}{default=true}"
+        % CTRL_ARG_DEVICE
+    )
+    print(
+        "value {control=%d}{value=%s}{display=Follow IRK}"
+        % (CTRL_ARG_DEVICE, zero_addr)
+    )
 
-    print("value {control=%d}{value=%d}{display=Legacy Passkey}{default=true}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_PASSKEY))
-    print("value {control=%d}{value=%d}{display=Legacy OOB data}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_OOB))
-    print("value {control=%d}{value=%d}{display=Legacy LTK}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_LEGACY_LTK))
-    print("value {control=%d}{value=%d}{display=SC LTK}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_SC_LTK))
-    print("value {control=%d}{value=%d}{display=SC Private Key}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_DH_PRIVATE_KEY))
-    print("value {control=%d}{value=%d}{display=IRK}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_IRK))
-    print("value {control=%d}{value=%d}{display=Add LE address}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_ADD_ADDR))
-    print("value {control=%d}{value=%d}{display=Follow LE address}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_FOLLOW_ADDR))
+    print(
+        "value {control=%d}{value=%d}{display=Legacy Passkey}{default=true}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_PASSKEY)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=Legacy OOB data}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_OOB)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=Legacy LTK}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_LEGACY_LTK)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=SC LTK}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_SC_LTK)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=SC Private Key}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_DH_PRIVATE_KEY)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=IRK}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_IRK)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=Add LE address}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_ADD_ADDR)
+    )
+    print(
+        "value {control=%d}{value=%d}{display=Follow LE address}"
+        % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_FOLLOW_ADDR)
+    )
 
 
 def string_address(address):
@@ -208,16 +292,16 @@ def string_address(address):
     if len(address) < 7:
         return None
 
-    addr_string = ''
+    addr_string = ""
 
     for i in range(5):
-        addr_string += (format(address[i], '02x') + ':')
-    addr_string += format(address[5], '02x') + ' '
+        addr_string += format(address[i], "02x") + ":"
+    addr_string += format(address[5], "02x") + " "
 
     if address[6]:
-        addr_string += ' random '
+        addr_string += " random "
     else:
-        addr_string += ' public '
+        addr_string += " public "
 
     return addr_string
 
@@ -231,13 +315,14 @@ def control_read():
         # > empty string ('')
         return None, None, None
 
-    _, _, length, arg, typ = struct.unpack('>sBHBB', header)
+    _, _, length, arg, typ = struct.unpack(">sBHBB", header)
 
     payload = bytearray()
     if length > 2:
         payload = fn_ctrl_in.read(length - 2)
 
     return arg, typ, payload
+
 
 def control_write(arg, typ, message):
     """Write the message to the control channel"""
@@ -247,8 +332,8 @@ def control_write(arg, typ, message):
         return
 
     packet = bytearray()
-    packet += struct.pack('>BBHBB', ord('T'), 0, len(message) + 2, arg, typ)
-    packet += message.encode('utf-8')
+    packet += struct.pack(">BBHBB", ord("T"), 0, len(message) + 2, arg, typ)
+    packet += message.encode("utf-8")
 
     fn_ctrl_out.write(packet)
 
@@ -278,11 +363,13 @@ def device_added(notification):
         # Extcap selector uses \0 character to separate value and display value,
         # therefore the display value cannot contain the \0 character as this
         # would lead to truncation of the display value.
-        display = (device.name.replace('\0', '\\0') +
-                   ("  " + str(device.RSSI) + " dBm  " if device.RSSI != 0 else "  ") +
-                   string_address(device.address))
+        display = (
+            device.name.replace("\0", "\\0")
+            + ("  " + str(device.RSSI) + " dBm  " if device.RSSI != 0 else "  ")
+            + string_address(device.address)
+        )
 
-        message = str(device.address) + '\0' + display
+        message = str(device.address) + "\0" + display
 
         control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, message)
 
@@ -298,33 +385,35 @@ def device_removed(notification):
     control_write(CTRL_ARG_DEVICE, CTRL_CMD_REMOVE, message)
     logging.info("Removed: " + display)
 
+
 def devices_cleared(notification):
     """Devices have been cleared"""
     message = ""
     control_write(CTRL_ARG_DEVICE, CTRL_CMD_REMOVE, message)
 
-    control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, " " + '\0' + "All advertising devices")
-    control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, zero_addr + '\0' + "Follow IRK")
+    control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, " " + "\0" + "All advertising devices")
+    control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, zero_addr + "\0" + "Follow IRK")
     control_write(CTRL_ARG_DEVICE, CTRL_CMD_SET, " ")
+
 
 def handle_control_command(sniffer, arg, typ, payload):
     """Handle command from control channel"""
     global last_used_key_type
 
     if arg == CTRL_ARG_DEVICE:
-        if payload == b' ':
+        if payload == b" ":
             scan_for_devices(sniffer)
         else:
             values = payload
-            values = values.replace(b'[', b'')
-            values = values.replace(b']', b'')
-            device_address = values.split(b',')
+            values = values.replace(b"[", b"")
+            values = values.replace(b"]", b"")
+            device_address = values.split(b",")
 
-            logging.info('follow_device: {}'.format(device_address))
+            logging.info("follow_device: {}".format(device_address))
             for i in range(6):
                 device_address[i] = int(device_address[i])
 
-            device_address[6] = 1 if device_address[6] == b' 1' else 0
+            device_address[6] = 1 if device_address[6] == b" 1" else 0
 
             device = Devices.Device(address=device_address, name='""', RSSI=0)
 
@@ -333,7 +422,7 @@ def handle_control_command(sniffer, arg, typ, payload):
     elif arg == CTRL_ARG_DEVICE_CLEAR:
         clear_devices(sniffer)
     elif arg == CTRL_ARG_KEY_TYPE:
-        last_used_key_type = int(payload.decode('utf-8'))
+        last_used_key_type = int(payload.decode("utf-8"))
     elif arg == CTRL_ARG_KEY_VAL:
         set_key_value(sniffer, payload)
     elif arg == CTRL_ARG_ADVHOP:
@@ -384,8 +473,10 @@ def follow_device(sniffer, device):
     """Follow the selected device"""
     global write_new_packets, in_follow_mode
 
-    sniffer.follow(device, capture_only_advertising, capture_only_legacy_advertising, capture_coded)
-    time.sleep(.1)
+    sniffer.follow(
+        device, capture_only_advertising, capture_only_legacy_advertising, capture_coded
+    )
+    time.sleep(0.1)
 
     in_follow_mode = True
     logging.info("Following " + string_address(device.address))
@@ -395,58 +486,64 @@ def set_key_value(sniffer, payload):
     """Send key value to device"""
     global last_used_key_val
 
-    payload = payload.decode('utf-8')
+    payload = payload.decode("utf-8")
     last_used_key_val = payload
 
-    if (last_used_key_type == CTRL_KEY_TYPE_PASSKEY):
+    if last_used_key_type == CTRL_KEY_TYPE_PASSKEY:
         if re.match("^[0-9]{6}$", payload):
             set_passkey(sniffer, payload)
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_OOB):
+    elif last_used_key_type == CTRL_KEY_TYPE_OOB:
         if re.match("^0[xX][0-9A-Za-z]{1,32}$", payload):
             set_OOB(sniffer, payload[2:])
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_DH_PRIVATE_KEY):
-        if (re.match("^0[xX][0-9A-Za-z]{1,64}$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_DH_PRIVATE_KEY:
+        if re.match("^0[xX][0-9A-Za-z]{1,64}$", payload):
             set_dh_private_key(sniffer, payload[2:])
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_LEGACY_LTK):
-        if (re.match("^0[xX][0-9A-Za-z]{1,32}$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_LEGACY_LTK:
+        if re.match("^0[xX][0-9A-Za-z]{1,32}$", payload):
             set_legacy_ltk(sniffer, payload[2:])
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_SC_LTK):
-        if (re.match("^0[xX][0-9A-Za-z]{1,32}$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_SC_LTK:
+        if re.match("^0[xX][0-9A-Za-z]{1,32}$", payload):
             set_sc_ltk(sniffer, payload[2:])
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_IRK):
-        if (re.match("^0[xX][0-9A-Za-z]{1,32}$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_IRK:
+        if re.match("^0[xX][0-9A-Za-z]{1,32}$", payload):
             set_irk(sniffer, payload[2:])
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_ADD_ADDR):
-        if (re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random)$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_ADD_ADDR:
+        if re.match(
+            "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random)$", payload
+        ):
             add_address(sniffer, payload)
         else:
             logging.info("Invalid key value: " + str(payload))
-    elif (last_used_key_type == CTRL_KEY_TYPE_FOLLOW_ADDR):
-        if (re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random)$", payload)):
+    elif last_used_key_type == CTRL_KEY_TYPE_FOLLOW_ADDR:
+        if re.match(
+            "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) (public|random)$", payload
+        ):
             follow_address(sniffer, payload)
         else:
             logging.info("Invalid key value: " + str(payload))
     else:
         logging.info("Invalid key type: " + str(last_used_key_type))
 
-def parse_hex(value):
-        if len(value) % 2 != 0:
-            value = '0' + value
 
-        a = list(value)
-        return [int(x + y, 16) for x,y in zip(a[::2], a[1::2])]
+def parse_hex(value):
+    if len(value) % 2 != 0:
+        value = "0" + value
+
+    a = list(value)
+    return [int(x + y, 16) for x, y in zip(a[::2], a[1::2])]
+
 
 def set_passkey(sniffer, payload):
     """Send passkey to device"""
@@ -461,36 +558,42 @@ def set_passkey(sniffer, payload):
 
     sniffer.sendTK(passkey)
 
+
 def set_OOB(sniffer, payload):
     """Send OOB to device"""
     logging.info("Setting OOB data: " + payload)
     sniffer.sendTK(parse_hex(payload))
+
 
 def set_dh_private_key(sniffer, payload):
     """Send Diffie-Hellman private key to device"""
     logging.info("Setting DH private key: " + payload)
     sniffer.sendPrivateKey(parse_hex(payload))
 
+
 def set_legacy_ltk(sniffer, payload):
     """Send Legacy Long Term Key (LTK) to device"""
     logging.info("Setting Legacy LTK: " + payload)
     sniffer.sendLegacyLTK(parse_hex(payload))
+
 
 def set_sc_ltk(sniffer, payload):
     """Send LE secure connections Long Term Key (LTK) to device"""
     logging.info("Setting SC LTK: " + payload)
     sniffer.sendSCLTK(parse_hex(payload))
 
+
 def set_irk(sniffer, payload):
     """Send Identity Resolving Key (IRK) to device"""
     logging.info("Setting IRK: " + payload)
     sniffer.sendIRK(parse_hex(payload))
 
+
 def add_address(sniffer, payload):
     """Add LE address to device list"""
     logging.info("Adding LE address: " + payload)
 
-    (addr,addr_type) = payload.split(' ')
+    (addr, addr_type) = payload.split(" ")
     device = [int(a, 16) for a in addr.split(":")]
 
     device.append(1 if addr_type == "random" else 0)
@@ -498,11 +601,12 @@ def add_address(sniffer, payload):
     new_device = Devices.Device(address=device, name='""', RSSI=0)
     sniffer.addDevice(new_device)
 
+
 def follow_address(sniffer, payload):
     """Add LE address to device list"""
     logging.info("Adding LE address: " + payload)
 
-    (addr,addr_type) = payload.split(' ')
+    (addr, addr_type) = payload.split(" ")
     device = [int(a, 16) for a in addr.split(":")]
 
     device.append(1 if addr_type == "random" else 0)
@@ -513,15 +617,16 @@ def follow_address(sniffer, payload):
     control_write(CTRL_ARG_DEVICE, CTRL_CMD_SET, f"{new_device.address}")
     follow_device(sniffer, new_device)
 
+
 def set_advhop(sniffer, payload):
     """Set advertising channel hop sequence"""
     global last_used_advhop
 
-    payload = payload.decode('utf-8')
+    payload = payload.decode("utf-8")
 
     last_used_advhop = payload
 
-    hops = [int(channel) for channel in payload.split(',')]
+    hops = [int(channel) for channel in payload.split(",")]
 
     sniffer.setAdvHopSequence(hops)
 
@@ -546,7 +651,7 @@ def error_interface_not_found(interface, fifo):
 
 def validate_interface(interface, fifo):
     """Check if interface exists"""
-    if sys.platform != 'win32' and not os.path.exists(interface):
+    if sys.platform != "win32" and not os.path.exists(interface):
         error_interface_not_found(interface, fifo)
 
 
@@ -557,12 +662,13 @@ def get_default_baudrate(interface, fifo):
         error_interface_not_found(interface, fifo)
     return rates["default"]
 
+
 def get_supported_protocol_version(extcap_version):
     """Return the maximum supported Packet Protocol Version"""
-    if extcap_version == 'None':
+    if extcap_version == "None":
         return 2
 
-    (major, minor) = extcap_version.split('.')
+    (major, minor) = extcap_version.split(".")
 
     major = int(major)
     minor = int(minor)
@@ -571,6 +677,7 @@ def get_supported_protocol_version(extcap_version):
         return 3
     else:
         return 2
+
 
 def setup_extcap_log_handler():
     """Add the a handler that emits log messages through the extcap control out channel"""
@@ -593,18 +700,18 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out):
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
     try:
-        fn_capture = open(fifo, 'wb', 0)
+        fn_capture = open(fifo, "wb", 0)
 
         if control_out is not None:
-            fn_ctrl_out = open(control_out, 'wb', 0)
+            fn_ctrl_out = open(control_out, "wb", 0)
             setup_extcap_log_handler()
 
         if control_in is not None:
-            fn_ctrl_in = open(control_in, 'rb', 0)
+            fn_ctrl_in = open(control_in, "rb", 0)
 
         logging.info("Log started at %s", time.strftime("%c"))
 
-        interface, extcap_version = interface.split('-')
+        interface, extcap_version = interface.split("-")
         logging.info("Extcap version %s", str(extcap_version))
 
         capture_write(Pcap.get_global_header())
@@ -619,7 +726,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out):
         sniffer.subscribe("DEVICE_REMOVED", device_removed)
         sniffer.subscribe("DEVICES_CLEARED", devices_cleared)
         sniffer.setAdvHopSequence([37, 38, 39])
-        sniffer.setSupportedProtocolVersion(get_supported_protocol_version(extcap_version))
+        sniffer.setSupportedProtocolVersion(
+            get_supported_protocol_version(extcap_version)
+        )
         logging.info("Sniffer created")
 
         logging.info("Software version: %s" % sniffer.swversion)
@@ -655,7 +764,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out):
                 pass
 
     except Exceptions.LockedException as e:
-        logging.info('{}'.format(e.message))
+        logging.info("{}".format(e.message))
 
     except OSError:
         # We'll get OSError=22 when/if wireshark kills the pipe(s) on capture
@@ -689,14 +798,14 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out):
 
 
 def extcap_close_fifo(fifo):
-    """"Close extcap fifo"""
+    """ "Close extcap fifo"""
     if not os.path.exists(fifo):
         print("FIFO does not exist!", file=sys.stderr)
         return
 
     # This is apparently needed to workaround an issue on Windows/macOS
     # where the message cannot be read. (really?)
-    fh = open(fifo, 'wb', 0)
+    fh = open(fifo, "wb", 0)
     fh.close()
 
 
@@ -705,13 +814,13 @@ class ExtcapLoggerHandler(logging.Handler):
 
     def emit(self, record):
         """Send log message to extcap"""
-        message = record.message.replace('\0', '\\0')
+        message = record.message.replace("\0", "\\0")
         log_message = f"{record.levelname}: {message}\n"
         control_write(CTRL_ARG_LOG, CTRL_CMD_ADD, log_message)
 
 
 def parse_capture_filter(capture_filter):
-    """"Parse given capture filter"""
+    """ "Parse given capture filter"""
     global rssi_filter
     m = re.search("^\s*rssi\s*(>=?)\s*(-?[0-9]+)\s*$", capture_filter, re.IGNORECASE)
     if m:
@@ -720,66 +829,88 @@ def parse_capture_filter(capture_filter):
             print("Illegal RSSI value, must be between -10 and -256")
         # Handle >= by modifying the threshold, since comparisons are always done with
         # the > operator
-        if m.group(1) == '>=':
+        if m.group(1) == ">=":
             rssi_filter = rssi_filter - 1
     else:
-        print("Filter syntax: \"RSSI >= -value\"")
+        print('Filter syntax: "RSSI >= -value"')
+
 
 import atexit
 
+
 @atexit.register
 def goodbye():
-   logging.info("Exiting PID {}".format(os.getpid())) 
+    logging.info("Exiting PID {}".format(os.getpid()))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Capture options
-    parser = argparse.ArgumentParser(description="Nordic Semiconductor nRF Sniffer for Bluetooth LE extcap plugin")
+    parser = argparse.ArgumentParser(
+        description="Nordic Semiconductor nRF Sniffer for Bluetooth LE extcap plugin"
+    )
 
     # Extcap Arguments
-    parser.add_argument("--capture",
-                        help="Start the capture",
-                        action="store_true")
+    parser.add_argument("--capture", help="Start the capture", action="store_true")
 
-    parser.add_argument("--extcap-interfaces",
-                        help="List available interfaces to capture from",
-                        action="store_true")
+    parser.add_argument(
+        "--extcap-interfaces",
+        help="List available interfaces to capture from",
+        action="store_true",
+    )
 
-    parser.add_argument("--extcap-interface",
-                        help="The interface to capture from")
+    parser.add_argument("--extcap-interface", help="The interface to capture from")
 
-    parser.add_argument("--extcap-dlts",
-                        help="List DLTs for the given interface",
-                        action="store_true")
+    parser.add_argument(
+        "--extcap-dlts", help="List DLTs for the given interface", action="store_true"
+    )
 
-    parser.add_argument("--extcap-config",
-                        help="List configurations for the given interface",
-                        action="store_true")
+    parser.add_argument(
+        "--extcap-config",
+        help="List configurations for the given interface",
+        action="store_true",
+    )
 
-    parser.add_argument("--extcap-capture-filter",
-                        help="Used together with capture to provide a capture filter")
+    parser.add_argument(
+        "--extcap-capture-filter",
+        help="Used together with capture to provide a capture filter",
+    )
 
-    parser.add_argument("--fifo",
-                        help="Use together with capture to provide the fifo to dump data to")
+    parser.add_argument(
+        "--fifo", help="Use together with capture to provide the fifo to dump data to"
+    )
 
-    parser.add_argument("--extcap-control-in",
-                        help="Used together with capture to get control messages from toolbar")
+    parser.add_argument(
+        "--extcap-control-in",
+        help="Used together with capture to get control messages from toolbar",
+    )
 
-    parser.add_argument("--extcap-control-out",
-                        help="Used together with capture to send control messages to toolbar")
+    parser.add_argument(
+        "--extcap-control-out",
+        help="Used together with capture to send control messages to toolbar",
+    )
 
-    parser.add_argument("--extcap-version",
-                        help="Set extcap supported version")
+    parser.add_argument("--extcap-version", help="Set extcap supported version")
 
     # Interface Arguments
     parser.add_argument("--device", help="Device", default="")
     parser.add_argument("--baudrate", type=int, help="The sniffer baud rate")
-    parser.add_argument("--only-advertising", help="Only advertising packets", action="store_true")
-    parser.add_argument("--only-legacy-advertising", help="Only legacy advertising packets", action="store_true")
-    parser.add_argument("--scan-follow-rsp", help="Find scan response data ", action="store_true")
-    parser.add_argument("--scan-follow-aux", help="Find auxiliary pointer data", action="store_true")
-    parser.add_argument("--coded", help="Scan and follow on LE Coded PHY", action="store_true")
+    parser.add_argument(
+        "--only-advertising", help="Only advertising packets", action="store_true"
+    )
+    parser.add_argument(
+        "--only-legacy-advertising",
+        help="Only legacy advertising packets",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--scan-follow-rsp", help="Find scan response data ", action="store_true"
+    )
+    parser.add_argument(
+        "--scan-follow-aux", help="Find auxiliary pointer data", action="store_true"
+    )
+    parser.add_argument(
+        "--coded", help="Scan and follow on LE Coded PHY", action="store_true"
+    )
 
     logging.info("Started PID {}".format(os.getpid()))
 
@@ -839,16 +970,23 @@ if __name__ == '__main__':
             parser.print_help()
             sys.exit(ERROR_FIFO)
         try:
-            logging.info('sniffer capture')
-            sniffer_capture(interface, args.baudrate, args.fifo, args.extcap_control_in, args.extcap_control_out)
+            logging.info("sniffer capture")
+            sniffer_capture(
+                interface,
+                args.baudrate,
+                args.fifo,
+                args.extcap_control_in,
+                args.extcap_control_out,
+            )
         except KeyboardInterrupt:
             pass
         except Exception as e:
             import traceback
+
             logging.info(traceback.format_exc())
-            logging.info('internal error: {}'.format(repr(e)))
+            logging.info("internal error: {}".format(repr(e)))
             sys.exit(ERROR_INTERNAL)
     else:
         parser.print_help()
         sys.exit(ERROR_USAGE)
-    logging.info('main exit PID {}'.format(os.getpid()))
+    logging.info("main exit PID {}".format(os.getpid()))
