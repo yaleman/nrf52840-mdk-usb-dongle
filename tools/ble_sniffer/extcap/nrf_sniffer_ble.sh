@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 script_path=$(dirname `which $0`)
 
@@ -26,5 +26,7 @@ if [ "$unamestr" = 'Darwin' ]; then
 else
 	py3=`which python3`
 fi
-
-exec $py3 $script_path/nrf_sniffer_ble.py "$@"
+uv venv --clear ~/.cache/nrf_sniffer
+source $HOME/.cache/nrf_sniffer/bin/activate
+uv pip install -r "$script_path/requirements.txt"
+python $script_path/nrf_sniffer_ble.py "$@"
