@@ -41,8 +41,11 @@
 Wireshark extcap wrapper for the nRF Sniffer for Bluetooth LE by Nordic Semiconductor.
 """
 
-import os
 import sys
+
+print(f"{sys.argv=}")
+
+import os
 import argparse
 import re
 import time
@@ -64,7 +67,6 @@ except ImportError:
 
 from SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
 
-print(sys.argv)
 
 ERROR_USAGE = 0
 ERROR_ARG = 1
